@@ -46,10 +46,10 @@ def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, 
 
     # impose Dirichlet BCs
     q = np.zeros(area)
-    for node, pval in pressure_bc.items():
+    for node, pressure in pressure_bc.items():
         A[node,:] = 0
         A[node,node] = 1.0
-        q[node] = pval
+        q[node] = pressure
 
     u = spla.spsolve(A.tocsr(), q)
     return u.reshape((grid['Nx'],grid['Ny']))
