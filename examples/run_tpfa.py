@@ -64,7 +64,7 @@ if __name__=='__main__':
     else:
         perm = np.exp(5*uniform_filter(uniform_filter(np.random.randn(2,grid['Nx'],grid['Ny']), size=3, mode='reflect'), size=3, mode='reflect'))
 
-    pressure_tpfa = TPFA(grid, perm, {0: +300, grid['Nx']*grid['Ny']-1: -300})
+    pressure_tpfa = TPFA(grid, perm, {0: 300, grid['Nx']*grid['Ny']-1: -300})
 
     fig, (ax1,ax2) = plt.subplots(1,2,figsize=(8,4))
     im = ax1.imshow(np.log10(perm[0]), origin='lower', aspect='equal')
