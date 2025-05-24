@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import uniform_filter
 
 
-def TPFA(grid:dict[str, int], permiability_filed:NDArray, pressure_bc:dict[int, int]) -> NDArray:
+def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, int]) -> NDArray:
     # Inverse permeabilities
-    perm_inv = 1.0 / permiability_filed
+    perm_inv = 1.0 / permiability_field
 
     # Transmissibilities
     TX = np.zeros((grid['Nx']+1, grid['Ny']))
