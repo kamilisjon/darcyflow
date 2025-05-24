@@ -13,14 +13,10 @@ def TPFA(Nx:int, Ny:int, permiability_field:np.ndarray, pressure_bc:dict[int, fl
     # Transmissibilities - T
     TX = np.zeros((Nx+1, Ny))
     TY = np.zeros((Nx, Ny+1))
-    hx, hy = 1/Nx, 1/Ny
+    hx, hy = 1/Nx, 1/Ny  # cell size is an inverse of the cell count
     tx, ty = 2*hy/hx, 2*hx/hy
-    for i in range(1, Nx):
-        for j in range(Ny):
-            TX[i,j] = tx / (perm_inv[i-1,j] + perm_inv[i,j])
-    for i in range(Nx):
-        for j in range(1, Ny):
-            TY[i,j] = ty / (perm_inv[i,j-1] + perm_inv[i,j])
+    TX[1:-1, :] = tx / (perm_inv[:-1, :] + perm_inv[1:, :])
+    TY[:, 1:-1] = ty / (perm_inv[:, :-1] + perm_inv[:, 1:])
 
     # Assemble pressure matrix - A
     rows, cols, data = [], [], []
