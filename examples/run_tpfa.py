@@ -33,27 +33,27 @@ def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, 
             m = idx(i,j,grid['Nx'])
             diag = 0.0
             if i>0:
-                t = TX[i,j]
                 rows.append(m)
                 cols.append(m-1)
+                t = TX[i,j]
                 data.append(-t)
                 diag+=t
             if i<grid['Nx']-1:
-                t = TX[i+1,j]
                 rows.append(m)
                 cols.append(m+1)
+                t = TX[i+1,j]
                 data.append(-t)
                 diag+=t
             if j>0:
-                t = TY[i,j]
                 rows.append(m)
                 cols.append(idx(i,j-1,grid['Nx']))
+                t = TY[i,j]
                 data.append(-t)
                 diag+=t
             if j<grid['Ny']-1:
-                t = TY[i,j+1]
                 rows.append(m)
                 cols.append(idx(i,j+1,grid['Nx']))
+                t = TY[i,j+1]
                 data.append(-t)
                 diag+=t
             rows.append(m)
