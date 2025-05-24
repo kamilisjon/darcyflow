@@ -79,13 +79,13 @@ if __name__=='__main__':
     else:
         porus_media = np.exp(5*uniform_filter(uniform_filter(np.random.randn(2,Nx,Ny), size=3, mode='reflect'), size=3, mode='reflect'))
 
-    pressure_tpfa = TPFA(Nx, Ny, porus_media, pressure_bc)
+    pressure_field = TPFA(Nx, Ny, porus_media, pressure_bc)
 
     fig, (ax1,ax2) = plt.subplots(1,2,figsize=(8,4))
     im = ax1.imshow(np.log10(porus_media[0]), origin='lower', aspect='equal')
     ax1.set_title('log10(K)'); fig.colorbar(im, ax=ax1)
 
-    cf = ax2.contourf(pressure_tpfa, levels=20)
+    cf = ax2.contourf(pressure_field, levels=20)
     ax2.set_title('Pressure (TPFA)'); fig.colorbar(cf, ax=ax2)
     plt.tight_layout()
     plt.show()
