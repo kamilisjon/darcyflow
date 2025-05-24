@@ -17,10 +17,10 @@ def TPFA(Nx:int, Ny:int, permiability_field:np.ndarray, pressure_bc:dict[int, fl
     tx, ty = 2*hy/hx, 2*hx/hy
     for i in range(1, Nx):
         for j in range(Ny):
-            TX[i,j] = tx / (perm_inv[0,i-1,j] + perm_inv[0,i,j])
+            TX[i,j] = tx / (perm_inv[i-1,j] + perm_inv[i,j])
     for i in range(Nx):
         for j in range(1, Ny):
-            TY[i,j] = ty / (perm_inv[1,i,j-1] + perm_inv[1,i,j])
+            TY[i,j] = ty / (perm_inv[i,j-1] + perm_inv[i,j])
 
     # Assemble pressure matrix - A
     rows, cols, data = [], [], []
@@ -75,18 +75,16 @@ if __name__=='__main__':
     pressure_bc: dict[int, float] = {0: 300.0, Nx*Ny-1: -300.0}
 
     if homogeneous:
-        porus_media = np.ones((2,Nx,Ny))
+        porus_media = np.ones((Nx,Ny))
     else:
-        porus_media = np.exp(5*uniform_filter(uniform_filter(np.random.randn(2,Nx,Ny), size=3, mode='reflect'), size=3, mode='reflect'))
+        porus_media = np.exp(5*uniform_filter(uniform_filter(np.random.rand(Nx,Ny), size=3, mode='reflect'), size=3, mode='reflect'))
 
     pressure_field = TPFA(Nx, Ny, porus_media, pressure_bc)
 
-    fig, (ax1,ax2,ax3) = plt.subplots(1,3,figsize=(12,4))
-    ax1.set_title('Porus media (x axis)')
-    fig.colorbar(ax1.imshow(porus_media[0]), ax=ax1)
-    ax2.set_title('Porus media (y axis)')
-    fig.colorbar(ax2.imshow(porus_media[1]), ax=ax2)
-    ax3.set_title('Pressure field')
-    fig.colorbar(ax3.contourf(pressure_field, levels=100), ax=ax3)
+    fig, (ax1,ax2) = plt.subplots(1,2,figsize=(9,4))
+    ax1.set_title('Porus media')
+    fig.colorbar(ax1.imshow(porus_media), ax=ax1)
+    ax2.set_title('Pressure field')
+    fig.colorbar(ax2.contourf(pressure_field, levels=20), ax=ax2)
     plt.tight_layout()
     plt.show()
