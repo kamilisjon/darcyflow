@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.typing import NDArray
 from scipy.sparse import lil_matrix
 import scipy.sparse.linalg as spla
 import matplotlib.pyplot as plt
@@ -8,7 +7,7 @@ from scipy.ndimage import uniform_filter
 def compute_inv(k: np.ndarray) -> np.ndarray: return 1.0 / k
 def idx(i: int, j: int, Nx: int) -> int: return i + j * Nx
 
-def TPFA(Nx:int, Ny:int, permiability_field:NDArray, pressure_bc:dict[int, float]) -> NDArray:
+def TPFA(Nx:int, Ny:int, permiability_field:np.ndarray, pressure_bc:dict[int, float]) -> np.ndarray:
     # Inverse permeabilities
     perm_inv = compute_inv(permiability_field)
 
