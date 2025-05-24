@@ -58,13 +58,14 @@ if __name__=='__main__':
     np.random.seed(0)
     homogeneous = False
     grid: dict[str, int] = {'Nx':40, 'Ny':40}
+    pressure_bc: dict[int, int] = {0: 300, grid['Nx']*grid['Ny']-1: -300}
 
     if homogeneous:
         perm = np.ones((2,grid['Nx'],grid['Ny']))
     else:
         perm = np.exp(5*uniform_filter(uniform_filter(np.random.randn(2,grid['Nx'],grid['Ny']), size=3, mode='reflect'), size=3, mode='reflect'))
 
-    pressure_tpfa = TPFA(grid, perm, {0: 300, grid['Nx']*grid['Ny']-1: -300})
+    pressure_tpfa = TPFA(grid, perm, pressure_bc)
 
     fig, (ax1,ax2) = plt.subplots(1,2,figsize=(8,4))
     im = ax1.imshow(np.log10(perm[0]), origin='lower', aspect='equal')
