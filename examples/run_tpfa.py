@@ -5,8 +5,10 @@ import scipy.sparse.linalg as spla
 import matplotlib.pyplot as plt
 from scipy.ndimage import uniform_filter
 
+def compute_inv(k: np.ndarray) -> np.ndarray: return 1.0 / k
+def idx(i: int, j: int, Nx: int) -> int: return i + j * Nx
 
-def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, int]) -> NDArray:
+def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, float]) -> NDArray:
     area = grid['Nx'] * grid['Ny']
     
     # Inverse permeabilities
@@ -25,20 +27,19 @@ def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, 
             TY[i,j] = ty / (perm_inv[1,i,j-1] + perm_inv[1,i,j])
 
     # Assemble pressure matrix - A
-    def idx(i:int, j:int) -> int: return i + j*grid['Nx']
     rows, cols, data = [], [], []
     for j in range(grid['Ny']):
         for i in range(grid['Nx']):
-            m = idx(i,j)
+            m = idx(i,j,grid['Nx'])
             diag = 0.0
             if i>0:
                 t = TX[i,j]; rows.append(m); cols.append(m-1); data.append(-t); diag+=t
             if i<grid['Nx']-1:
                 t = TX[i+1,j]; rows.append(m); cols.append(m+1); data.append(-t); diag+=t
             if j>0:
-                t = TY[i,j]; rows.append(m); cols.append(idx(i,j-1)); data.append(-t); diag+=t
+                t = TY[i,j]; rows.append(m); cols.append(idx(i,j-1,grid['Nx'])); data.append(-t); diag+=t
             if j<grid['Ny']-1:
-                t = TY[i,j+1]; rows.append(m); cols.append(idx(i,j+1)); data.append(-t); diag+=t
+                t = TY[i,j+1]; rows.append(m); cols.append(idx(i,j+1,grid['Nx'])); data.append(-t); diag+=t
             rows.append(m); cols.append(m); data.append(diag)
     A = lil_matrix((area, area))
     A[rows, cols] = data
@@ -56,7 +57,7 @@ if __name__=='__main__':
     np.random.seed(0)
     homogeneous = True
     grid: dict[str, int] = {'Nx':40, 'Ny':40}
-    pressure_bc: dict[int, int] = {0: 300, grid['Nx']*grid['Ny']-1: -300}
+    pressure_bc: dict[int, float] = {0: 300.0, grid['Nx']*grid['Ny']-1: -300.0}
 
     if homogeneous:
         perm = np.ones((2,grid['Nx'],grid['Ny']))
