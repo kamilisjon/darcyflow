@@ -8,7 +8,6 @@ def compute_inv(k: np.ndarray) -> np.ndarray: return 1.0 / k
 def idx(i: int, j: int, Nx: int) -> int: return i + j * Nx
 
 def TPFA(Nx:int, Ny:int, permiability_field:np.ndarray, pressure_bc:dict[int, float]) -> np.ndarray:
-    # Inverse permeabilities
     perm_inv = compute_inv(permiability_field)
 
     # Transmissibilities - T
