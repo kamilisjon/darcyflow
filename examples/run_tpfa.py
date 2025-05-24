@@ -68,7 +68,7 @@ def TPFA(Nx:int, Ny:int, permiability_field:np.ndarray, pressure_bc:dict[int, fl
     return spla.spsolve(A.tocsr(), q).reshape((Nx,Ny))
 
 if __name__=='__main__':
-    np.random.seed(2)
+    np.random.seed(0)
     homogeneous = False
     Nx = 40
     Ny = 40
@@ -83,8 +83,12 @@ if __name__=='__main__':
 
     fig, (ax1,ax2) = plt.subplots(1,2,figsize=(9,4))
     ax1.set_title('Porus media')
-    fig.colorbar(ax1.imshow(porus_media), ax=ax1)
+    ax1.set_xlim(0, Nx)
+    ax1.set_ylim(0, Ny)
+    fig.colorbar(ax1.imshow(porus_media, extent=(0, Nx, 0, Ny)), ax=ax1)
     ax2.set_title('Pressure field')
-    fig.colorbar(ax2.contourf(pressure_field, levels=20), ax=ax2)
+    ax2.set_xlim(0, Nx)
+    ax2.set_ylim(0, Ny)
+    fig.colorbar(ax2.contourf(pressure_field, levels=20, extent=(0, Nx, 0, Ny)), ax=ax2)
     plt.tight_layout()
     plt.show()
