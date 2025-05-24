@@ -81,11 +81,12 @@ if __name__=='__main__':
 
     pressure_field = TPFA(Nx, Ny, porus_media, pressure_bc)
 
-    fig, (ax1,ax2) = plt.subplots(1,2,figsize=(8,4))
-    im = ax1.imshow(np.log10(porus_media[0]), origin='lower', aspect='equal')
-    ax1.set_title('log10(K)'); fig.colorbar(im, ax=ax1)
-
-    cf = ax2.contourf(pressure_field, levels=20)
-    ax2.set_title('Pressure (TPFA)'); fig.colorbar(cf, ax=ax2)
+    fig, (ax1,ax2,ax3) = plt.subplots(1,3,figsize=(12,4))
+    ax1.set_title('Porus media (x axis)')
+    fig.colorbar(ax1.imshow(porus_media[0], origin='lower', aspect='equal'), ax=ax1)
+    ax2.set_title('Porus media (y axis)')
+    fig.colorbar(ax2.imshow(porus_media[1], origin='lower', aspect='equal'), ax=ax2)
+    ax3.set_title('Pressure field')
+    fig.colorbar(ax3.contourf(pressure_field, levels=20), ax=ax3)
     plt.tight_layout()
     plt.show()
