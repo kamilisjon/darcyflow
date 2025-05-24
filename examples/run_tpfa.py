@@ -81,7 +81,7 @@ if __name__=='__main__':
 
     pressure_field = TPFA(Nx, Ny, porus_media, pressure_bc)
 
-    fig, (ax1,ax2) = plt.subplots(1,2,figsize=(9,4))
+    fig, (ax1,ax2) = plt.subplots(1,2,figsize=(10,4))
     ax1.set_title('Porus media')
     ax1.set_xlim(0, Nx)
     ax1.set_ylim(0, Ny)
