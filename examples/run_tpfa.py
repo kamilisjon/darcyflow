@@ -6,13 +6,14 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import uniform_filter
 
 
-def TPFA(grid:dict[str, int], cell_size:dict[str, float], permiability_filed:NDArray, pressure_bc:dict[int, int]) -> NDArray:
+def TPFA(grid:dict[str, int], permiability_filed:NDArray, pressure_bc:dict[int, int]) -> NDArray:
     # Inverse permeabilities
     perm_inv = 1.0 / permiability_filed
 
     # Transmissibilities
     TX = np.zeros((grid['Nx']+1, grid['Ny']))
     TY = np.zeros((grid['Nx'], grid['Ny']+1))
+    cell_size: dict[str, float] = {'hx':1/grid['Nx'], 'hy':1/grid['Ny']}
     tx, ty = 2*cell_size['hy']/cell_size['hx'], 2*cell_size['hx']/cell_size['hy']
 
     for i in range(1, grid['Nx']):
@@ -57,14 +58,13 @@ if __name__=='__main__':
     np.random.seed(0)
     homogeneous = False
     grid: dict[str, int] = {'Nx':40, 'Ny':40}
-    cell_sizes: dict[str, float] = {'hx':1/40, 'hy':1/40}
 
     if homogeneous:
         perm = np.ones((2,grid['Nx'],grid['Ny']))
     else:
         perm = np.exp(5*uniform_filter(uniform_filter(np.random.randn(2,grid['Nx'],grid['Ny']), size=3, mode='reflect'), size=3, mode='reflect'))
 
-    pressure_tpfa = TPFA(grid, cell_sizes, perm, {0: +300, grid['Nx']*grid['Ny']-1: -300})
+    pressure_tpfa = TPFA(grid, perm, {0: +300, grid['Nx']*grid['Ny']-1: -300})
 
     fig, (ax1,ax2) = plt.subplots(1,2,figsize=(8,4))
     im = ax1.imshow(np.log10(perm[0]), origin='lower', aspect='equal')
