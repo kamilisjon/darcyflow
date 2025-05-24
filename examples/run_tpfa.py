@@ -9,8 +9,6 @@ def compute_inv(k: np.ndarray) -> np.ndarray: return 1.0 / k
 def idx(i: int, j: int, Nx: int) -> int: return i + j * Nx
 
 def TPFA(Nx:int, Ny:int, permiability_field:NDArray, pressure_bc:dict[int, float]) -> NDArray:
-    area = Nx * Ny
-    
     # Inverse permeabilities
     perm_inv = compute_inv(permiability_field)
 
@@ -59,11 +57,11 @@ def TPFA(Nx:int, Ny:int, permiability_field:NDArray, pressure_bc:dict[int, float
             rows.append(m)
             cols.append(m)
             data.append(diag)
-    A = lil_matrix((area, area))
+    A = lil_matrix((Nx*Ny, Nx*Ny))
     A[rows, cols] = data
 
     # impose Dirichlet BCs
-    q = np.zeros(area)
+    q = np.zeros(Nx*Ny)
     for node, pressure in pressure_bc.items():
         A[node,:] = 0
         A[node,node] = 1.0
