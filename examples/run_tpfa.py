@@ -12,7 +12,7 @@ def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, 
     area = grid['Nx'] * grid['Ny']
     
     # Inverse permeabilities
-    perm_inv = 1.0 / permiability_field
+    perm_inv = compute_inv(permiability_field)
 
     # Transmissibilities - T
     TX = np.zeros((grid['Nx']+1, grid['Ny']))
