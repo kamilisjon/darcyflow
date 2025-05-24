@@ -75,14 +75,14 @@ if __name__=='__main__':
     pressure_bc: dict[int, float] = {0: 300.0, Nx*Ny-1: -300.0}
 
     if homogeneous:
-        perm = np.ones((2,Nx,Ny))
+        porus_media = np.ones((2,Nx,Ny))
     else:
-        perm = np.exp(5*uniform_filter(uniform_filter(np.random.randn(2,Nx,Ny), size=3, mode='reflect'), size=3, mode='reflect'))
+        porus_media = np.exp(5*uniform_filter(uniform_filter(np.random.randn(2,Nx,Ny), size=3, mode='reflect'), size=3, mode='reflect'))
 
-    pressure_tpfa = TPFA(Nx, Ny, perm, pressure_bc)
+    pressure_tpfa = TPFA(Nx, Ny, porus_media, pressure_bc)
 
     fig, (ax1,ax2) = plt.subplots(1,2,figsize=(8,4))
-    im = ax1.imshow(np.log10(perm[0]), origin='lower', aspect='equal')
+    im = ax1.imshow(np.log10(porus_media[0]), origin='lower', aspect='equal')
     ax1.set_title('log10(K)'); fig.colorbar(im, ax=ax1)
 
     cf = ax2.contourf(pressure_tpfa, levels=20)
