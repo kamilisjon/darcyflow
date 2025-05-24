@@ -8,29 +8,29 @@ from scipy.ndimage import uniform_filter
 def compute_inv(k: np.ndarray) -> np.ndarray: return 1.0 / k
 def idx(i: int, j: int, Nx: int) -> int: return i + j * Nx
 
-def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, float]) -> NDArray:
-    area = grid['Nx'] * grid['Ny']
+def TPFA(Nx:int, Ny:int, permiability_field:NDArray, pressure_bc:dict[int, float]) -> NDArray:
+    area = Nx * Ny
     
     # Inverse permeabilities
     perm_inv = compute_inv(permiability_field)
 
     # Transmissibilities - T
-    TX = np.zeros((grid['Nx']+1, grid['Ny']))
-    TY = np.zeros((grid['Nx'], grid['Ny']+1))
-    cell_size: dict[str, float] = {'hx':1/grid['Nx'], 'hy':1/grid['Ny']}
-    tx, ty = 2*cell_size['hy']/cell_size['hx'], 2*cell_size['hx']/cell_size['hy']
-    for i in range(1, grid['Nx']):
-        for j in range(grid['Ny']):
+    TX = np.zeros((Nx+1, Ny))
+    TY = np.zeros((Nx, Ny+1))
+    hx, hy = 1/Nx, 1/Ny
+    tx, ty = 2*hy/hx, 2*hx/hy
+    for i in range(1, Nx):
+        for j in range(Ny):
             TX[i,j] = tx / (perm_inv[0,i-1,j] + perm_inv[0,i,j])
-    for i in range(grid['Nx']):
-        for j in range(1, grid['Ny']):
+    for i in range(Nx):
+        for j in range(1, Ny):
             TY[i,j] = ty / (perm_inv[1,i,j-1] + perm_inv[1,i,j])
 
     # Assemble pressure matrix - A
     rows, cols, data = [], [], []
-    for j in range(grid['Ny']):
-        for i in range(grid['Nx']):
-            m = idx(i,j,grid['Nx'])
+    for j in range(Ny):
+        for i in range(Nx):
+            m = idx(i,j,Nx)
             diag = 0.0
             if i>0:
                 rows.append(m)
@@ -38,7 +38,7 @@ def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, 
                 t = TX[i,j]
                 data.append(-t)
                 diag+=t
-            if i<grid['Nx']-1:
+            if i<Nx-1:
                 rows.append(m)
                 cols.append(m+1)
                 t = TX[i+1,j]
@@ -46,13 +46,13 @@ def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, 
                 diag+=t
             if j>0:
                 rows.append(m)
-                cols.append(idx(i,j-1,grid['Nx']))
+                cols.append(idx(i,j-1,Nx))
                 t = TY[i,j]
                 data.append(-t)
                 diag+=t
-            if j<grid['Ny']-1:
+            if j<Ny-1:
                 rows.append(m)
-                cols.append(idx(i,j+1,grid['Nx']))
+                cols.append(idx(i,j+1,Nx))
                 t = TY[i,j+1]
                 data.append(-t)
                 diag+=t
@@ -69,20 +69,21 @@ def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, 
         A[node,node] = 1.0
         q[node] = pressure
 
-    return spla.spsolve(A.tocsr(), q).reshape((grid['Nx'],grid['Ny']))
+    return spla.spsolve(A.tocsr(), q).reshape((Nx,Ny))
 
 if __name__=='__main__':
     np.random.seed(0)
     homogeneous = False
-    grid: dict[str, int] = {'Nx':40, 'Ny':40}
-    pressure_bc: dict[int, float] = {0: 300.0, grid['Nx']*grid['Ny']-1: -300.0}
+    Nx = 40
+    Ny = 40
+    pressure_bc: dict[int, float] = {0: 300.0, Nx*Ny-1: -300.0}
 
     if homogeneous:
-        perm = np.ones((2,grid['Nx'],grid['Ny']))
+        perm = np.ones((2,Nx,Ny))
     else:
-        perm = np.exp(5*uniform_filter(uniform_filter(np.random.randn(2,grid['Nx'],grid['Ny']), size=3, mode='reflect'), size=3, mode='reflect'))
+        perm = np.exp(5*uniform_filter(uniform_filter(np.random.randn(2,Nx,Ny), size=3, mode='reflect'), size=3, mode='reflect'))
 
-    pressure_tpfa = TPFA(grid, perm, pressure_bc)
+    pressure_tpfa = TPFA(Nx, Ny, perm, pressure_bc)
 
     fig, (ax1,ax2) = plt.subplots(1,2,figsize=(8,4))
     im = ax1.imshow(np.log10(perm[0]), origin='lower', aspect='equal')
