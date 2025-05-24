@@ -33,14 +33,32 @@ def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, 
             m = idx(i,j,grid['Nx'])
             diag = 0.0
             if i>0:
-                t = TX[i,j]; rows.append(m); cols.append(m-1); data.append(-t); diag+=t
+                t = TX[i,j]
+                rows.append(m)
+                cols.append(m-1)
+                data.append(-t)
+                diag+=t
             if i<grid['Nx']-1:
-                t = TX[i+1,j]; rows.append(m); cols.append(m+1); data.append(-t); diag+=t
+                t = TX[i+1,j]
+                rows.append(m)
+                cols.append(m+1)
+                data.append(-t)
+                diag+=t
             if j>0:
-                t = TY[i,j]; rows.append(m); cols.append(idx(i,j-1,grid['Nx'])); data.append(-t); diag+=t
+                t = TY[i,j]
+                rows.append(m)
+                cols.append(idx(i,j-1,grid['Nx']))
+                data.append(-t)
+                diag+=t
             if j<grid['Ny']-1:
-                t = TY[i,j+1]; rows.append(m); cols.append(idx(i,j+1,grid['Nx'])); data.append(-t); diag+=t
-            rows.append(m); cols.append(m); data.append(diag)
+                t = TY[i,j+1]
+                rows.append(m)
+                cols.append(idx(i,j+1,grid['Nx']))
+                data.append(-t)
+                diag+=t
+            rows.append(m)
+            cols.append(m)
+            data.append(diag)
     A = lil_matrix((area, area))
     A[rows, cols] = data
 
@@ -55,7 +73,7 @@ def TPFA(grid:dict[str, int], permiability_field:NDArray, pressure_bc:dict[int, 
 
 if __name__=='__main__':
     np.random.seed(0)
-    homogeneous = True
+    homogeneous = False
     grid: dict[str, int] = {'Nx':40, 'Ny':40}
     pressure_bc: dict[int, float] = {0: 300.0, grid['Nx']*grid['Ny']-1: -300.0}
 
