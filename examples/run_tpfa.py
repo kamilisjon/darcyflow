@@ -5,8 +5,6 @@ from scipy.sparse import coo_matrix
 import matplotlib.pyplot as plt
 from scipy.ndimage import uniform_filter
 
-def idx(i: int, j: int, Nx: int) -> int: return i + j * Nx
-
 # Good reference of TPFA implementation, however the calculations order differs: 
 # https://www.duo.uio.no/bitstream/handle/10852/9721/Lunde.pdf?sequence=1
 # What is an orthogonal grid?:
@@ -43,6 +41,8 @@ def TPFA(Nx:int, Ny:int, permiability_field:np.ndarray, pressure_bc:dict[int, fl
     TY[:, 1:-1] = (2 * cell_dim_x / cell_dim_y) / (perm_inv[:, :-1] + perm_inv[:, 1:])
 
     # Assemble pressure matrix - A
+    # Same logic as in MatLab code. Could be rewriten to be more gracefull
+    def idx(i: int, j: int, Nx: int) -> int: return i + j * Nx
     rows, cols, data = [], [], []
     for j in range(Ny):
         for i in range(Nx):
@@ -78,131 +78,22 @@ def TPFA(Nx:int, Ny:int, permiability_field:np.ndarray, pressure_bc:dict[int, fl
     A = lil_matrix((Nx*Ny, Nx*Ny))
     A[rows, cols] = data
 
-    # impose Dirichlet BCs
+    # impose BCs
     q = np.zeros(Nx*Ny)
     for node, pressure in pressure_bc.items():
-        # These A updates were given by ChatGPT. These make the result look good. But why we need them? Seems it should be enough to have source/sink pressures with q.
-        A[node,:] = 0
-        A[node,node] = 1.0
-        q[node] = pressure
+        # ChatGPT gave this solution. Did not find other source. Also fixes the MatLab code of the author
+        A[node,:] = 0       # zero out entire row
+        A[node,node] = 1.0  # set diagonal to 1
+        q[node] = pressure  # enforce pressure on specific point
 
     return spla.spsolve(A.tocsr(), q).reshape((Nx,Ny))
-
-def compute_local_T(Kcells, hx, hy):
-    """
-    Compute the 4×4 local transmissibility matrix T_loc for one interaction region.
-    Kcells = [K_SW, K_SE, K_NE, K_NW], each a 2×2 permeability tensor.
-    T_loc[f, c] gives the contribution of P_cell[c] to q_subface[f].
-    Subfaces f = 0:south, 1:east, 2:north, 3:west; cells c = [SW,SE,NE,NW].
-    """
-    KSW, KSE, KNE, KNW = Kcells
-    # Build A (8×8) and B (8×4) for continuity eqns
-    A = np.zeros((8,8))
-    B = np.zeros((8,4))
-    # 1) south pressure continuity
-    A[0, 0] = hx/2;   A[0, 2] = hx/2
-    B[0, 0] = -1;     B[0, 1] = +1
-    # 2) south flux continuity (n=[0,-1])
-    A[1, 0] =  KSW[1,0];  A[1,1] =  KSW[1,1]
-    A[1, 2] = -KSE[1,0];  A[1,3] = -KSE[1,1]
-    # 3) east pressure continuity
-    A[2, 3] = hy/2;   A[2, 5] = hy/2
-    B[2, 1] = -1;     B[2, 2] = +1
-    # 4) east flux continuity (n=[1,0])
-    A[3, 2] =  KSE[0,0];  A[3,3] =  KSE[0,1]
-    A[3, 4] = -KNE[0,0];  A[3,5] = -KNE[0,1]
-    # 5) north pressure continuity
-    A[4, 6] = hx/2;   A[4, 4] = hx/2
-    B[4, 2] = +1;     B[4, 3] = -1
-    # 6) north flux continuity (n=[0,1])
-    A[5, 6] =  KNW[0,1];  A[5,7] =  KNW[1,1]
-    A[5, 4] = -KNE[0,1];  A[5,5] = -KNE[1,1]
-    # 7) west pressure continuity
-    A[6, 1] = hy/2;   A[6, 7] = hy/2
-    B[6, 0] = -1;     B[6, 3] = +1
-    # 8) west flux continuity (n=[-1,0])
-    A[7, 0] =  KSW[0,0];  A[7,1] =  KSW[0,1]
-    A[7, 6] = -KNW[0,0];  A[7,7] = -KNW[0,1]
-
-    invA = np.linalg.inv(A)
-
-    # Build M (4×8) to turn gradients → fluxes on each subface
-    M = np.zeros((4,8))
-    # south: use SW side, n_south=[0,-1], length= hx
-    M[0, 0:2] = -np.array([KSW[1,0], KSW[1,1]]) * hx
-    # east: use SE side, n_east=[1,0], length= hy
-    M[1, 2:4] =  np.array([KSE[0,0], KSE[0,1]]) * hy
-    # north: use NW side, n_north=[0,1], length= hx
-    M[2, 6:8] =  np.array([KNW[0,1], KNW[1,1]]) * hx
-    # west: use SW side, n_west=[-1,0], length= hy
-    M[3, 0:2] = -np.array([KSW[0,0], KSW[0,1]]) * hy
-
-    # Local T_loc: subface flux = T_loc @ P_loc
-    T_loc = M.dot(invA).dot(B)
-    return T_loc
-
-def MPFA_O(Nx, Ny, K_field, pressure_bc):
-    """
-    Solve -∇·(K ∇p)=0 on [0,1]^2 with Dirichlet BCs.
-    K_field[i,j] is a 2×2 tensor in cell (i,j).
-    pressure_bc is { global_index: p_value }.
-    Returns p as an (Nx,Ny) array.
-    """
-    hx, hy = 1.0/Nx, 1.0/Ny
-    rows, cols, data = [], [], []
-
-    # Loop over all interior nodes i=1..Nx-1, j=1..Ny-1
-    for i in range(1, Nx):
-        for j in range(1, Ny):
-            # gather the 4 cell tensors around node (i,j)
-            KSW = K_field[i-1, j-1]
-            KSE = K_field[i  , j-1]
-            KNE = K_field[i  , j  ]
-            KNW = K_field[i-1, j  ]
-            Tloc = compute_local_T([KSW,KSE,KNE,KNW], hx, hy)
-
-            # global cell‐indices in the order [SW,SE,NE,NW]
-            ids = [
-                idx(i-1, j-1, Nx),
-                idx(i  , j-1, Nx),
-                idx(i  , j  , Nx),
-                idx(i-1, j  , Nx),
-            ]
-
-            # for each of the 4 subfaces f, add its Tloc[f,*] contributions
-            # f=0: SW↔SE, f=1: SE↔NE, f=2: NW↔NE, f=3: SW↔NW
-            neigh = [(0,1), (1,2), (3,2), (0,3)]
-            for f, (a_idx,b_idx) in enumerate(neigh):
-                Tval = 0.5*( Tloc[f, b_idx] - Tloc[f, a_idx] )
-                mi = ids[a_idx]; mj = ids[b_idx]
-                # assemble 2×2 block [ +T  -T; -T  +T ]
-                for ii, jj, vv in [
-                    (mi, mi, +Tval),
-                    (mj, mj, +Tval),
-                    (mi, mj, -Tval),
-                    (mj, mi, -Tval),
-                ]:
-                    rows.append(ii); cols.append(jj); data.append(vv)
-
-    # build global sparse A
-    A = coo_matrix((data,(rows,cols)),shape=(Nx*Ny, Nx*Ny)).tocsr()
-
-    # RHS and Dirichlet BCs
-    q = np.zeros(Nx*Ny)
-    for node, pval in pressure_bc.items():
-        A[node,:] = 0
-        A[node,node] = 1.0
-        q[node] = pval
-
-    p = spla.spsolve(A, q)
-    return p.reshape((Nx,Ny))
 
 if __name__=='__main__':
     np.random.seed(0)
     homogeneous = False
     Nx = 40
     Ny = 40
-    pressure_bc: dict[int, float] = {0: 300.0, 512: 200, 1212: -200, Nx*Ny-1: -300.0}
+    pressure_bc: dict[int, float] = {0: 300.0, Nx*Ny-1: -300.0}
 
     if homogeneous:
         porus_media = np.ones((Nx,Ny))
