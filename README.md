@@ -8,4 +8,4 @@ Steps:
 * Install the requirements
 
 ## Examples
-* TPFA solution. `python .\examples\run_tpfa.py`
+* TPFA solution example. `python .\examples\run_tpfa.py`
