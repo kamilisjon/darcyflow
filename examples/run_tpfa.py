@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.sparse import lil_matrix
 import scipy.sparse.linalg as spla
-from scipy.sparse import coo_matrix
 import matplotlib.pyplot as plt
 from scipy.ndimage import uniform_filter
 
@@ -35,7 +34,7 @@ def TPFA(Nx:int, Ny:int, permiability_field:np.ndarray, pressure_bc:dict[int, fl
     TX = np.zeros((Nx+1, Ny))
     TY = np.zeros((Nx, Ny+1))
     cell_dim_x, cell_dim_y = 1/Nx, 1/Ny  # Cell size is an inverse of the cell count here to get [0, 1] size grid. Why so?
-    # Not sure how did they got this expression. Formula is different. If it would be clear what ∆xi, ∆xj and 2|γij| mean, then the tij formula could be used here
+    # Seems, that author derived this expression from the last definition of tij. Page 13 in https://andreas.folk.ntnu.no/papers/ResSimMatlab.pdf
     perm_inv = 1.0 / permiability_field
     TX[1:-1, :] = (2 * cell_dim_y / cell_dim_x) / (perm_inv[:-1, :] + perm_inv[1:, :])
     TY[:, 1:-1] = (2 * cell_dim_x / cell_dim_y) / (perm_inv[:, :-1] + perm_inv[:, 1:])
@@ -93,7 +92,8 @@ if __name__=='__main__':
     homogeneous = False
     Nx = 40
     Ny = 40
-    pressure_bc: dict[int, float] = {0: 300.0, Nx*Ny-1: -300.0}
+    pressure_bc: dict[int, float] = {0: 300.0, 
+                                     Nx*Ny-1: -300.0}
 
     if homogeneous:
         porus_media = np.ones((Nx,Ny))
