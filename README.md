@@ -1,11 +1,11 @@
 # darcyflow
 
 ## Environment setup
-Did use Win10, but will likely work in other OS
-Reguirement: python >= 3.10
-Steps:
-* Create and activate Python venv
-* Install the requirements
+* Did use Win10, but will likely work in other OS
+* Reguirement: python >= 3.10
+* Steps:
+   * Create and activate Python venv
+   * Install the requirements
 
 ## Examples
 * TPFA and MPFA solutions comparison. `$env:PYTHONPATH='.'; python .\examples\compare_tpfa_mpfa.py`
