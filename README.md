@@ -1,11 +1,15 @@
 # darcyflow
 
 ## Environment setup
-* Did use Win10, but will likely work in other OS
-* Reguirement: python >= 3.10
-* Steps:
-    * Create and activate Python venv
-    * Install the requirements
+Did use Win10, but will likely work in other OS
+Reguirement: python >= 3.10
+Steps:
+* Create and activate Python venv
+* Install the requirements
 
 ## Examples
-* TPFA solution example. `python .\examples\run_tpfa.py`
+* TPFA and MPFA solutions comparison. `$env:PYTHONPATH='.'; python .\examples\compare_tpfa_mpfa.py`
+    * In Linux: `PYTHONPATH='.' python .\examples\compare_tpfa_mpfa.py`
+    * Open compare_tpfa_mpfa.py and try running with different permiability field from darcyflow/porus_media.py
+    * Try setting sources and well in different places of the grid by updating pressure_bc. Positive value - source, negative value - well.
+* Visualise examples of implemented permiability field generators: `$env:PYTHONPATH='.'; python .\examples\viz_permiability_fields.py`
