@@ -1,6 +1,8 @@
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
+import warnings
+warnings.simplefilter("ignore", sp.SparseEfficiencyWarning)
 
 # ---------- helpers ----------------------------------------------------------
 def gidx(i, j, Nx):                  # (i,j) → global cell index
@@ -180,18 +182,18 @@ def apply_dirichlet(A, rhs, pressure_bc):
 
 
 # ---------- top-level solver -------------------------------------------------
-def solve(Nx, Ny, pressure_bc, K, method="mpfa_o"):
+def solve(domain, K, method="mpfa_o"):
     """
     Returns Ny×Nx array of cell pressures for an MPFA-O or an TPFA solve
     """
     if method == "mpfa_o":
-        A, rhs = assemble_mpfa_o(Nx, Ny, K)
+        A, rhs = assemble_mpfa_o(domain.Nx, domain.Ny, K)
     elif method == "tpfa":
-        A, rhs = assemble_tpfa(Nx, Ny, K)
+        A, rhs = assemble_tpfa(domain.Nx, domain.Ny, K)
     elif method == "fdm":
-        A, rhs = assemble_fdm(Nx, Ny, K)
+        A, rhs = assemble_fdm(domain.Nx, domain.Ny, K)
     else:
         raise NotImplementedError(f"Method {method} is not implemented. Implemented: 'mpfa_o', 'tpfa'")
-    A, rhs = apply_dirichlet(A, rhs, pressure_bc)
+    A, rhs = apply_dirichlet(A, rhs, domain.pressure_bc)
     p = spla.spsolve(A, rhs)
-    return p.reshape(Ny, Nx)
+    return p.reshape(domain.Ny, domain.Nx)

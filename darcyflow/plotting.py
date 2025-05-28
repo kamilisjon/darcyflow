@@ -17,7 +17,7 @@ def plot_P(ax, P, U, title="Presure field"):
     y = np.linspace(0, ny-1, ny)
     X, Y = np.meshgrid(x, y)
     ax.set_title(title, fontsize=10)
-    plt.colorbar(ax.contourf(P, levels=50), ax=ax)
+    plt.colorbar(ax.contourf(P, levels=50), ax=ax, cmap="jet")
     ax.quiver(X, Y, U[0], U[1], color='black', scale=5e3)
     ax.set_xlabel('x')
     ax.set_ylabel('y')
