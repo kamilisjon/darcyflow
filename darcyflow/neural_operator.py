@@ -8,6 +8,12 @@ from neuralop.models import FNO
 from darcyflow.solver import solve
 from darcyflow.porus_media import DarcyDomain
 
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+    torch.cuda.set_device(device)
+else:
+    device = torch.device("cpu")
+print(f"Using device: {device}")
 
 # Dataset generation
 def generate_dataset(n_samples, domain, solver_method):
@@ -44,6 +50,7 @@ model = FNO(in_channels=1,
             n_modes=(16, 16),
             hidden_channels=32,
             projection_channel_ratio=2)
+model = model.to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 loss_fn = nn.MSELoss()
@@ -53,6 +60,8 @@ for epoch in trange(1000, desc="Training model"):  # Use more epochs for better 
     model.train()
     total_loss = 0
     for K_batch, P_batch in train_loader:
+        K_batch = K_batch.to(device)
+        P_batch = P_batch.to(device)
         optimizer.zero_grad()
         pred = model(K_batch)
         loss = loss_fn(pred, P_batch)
@@ -66,8 +75,8 @@ print("Testing...")
 model.eval()
 with torch.no_grad():
     test_K = domain.exp_uniform_k()
-    test_K_tensor = torch.tensor(test_K, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-    pred_P = model(test_K_tensor).squeeze().numpy()
+    test_K_tensor = torch.tensor(test_K, dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(device)
+    pred_P = model(test_K_tensor).squeeze().cpu().numpy()  # move prediction back to CPU for plotting
 
 # Plot results
 plt.figure(figsize=(12, 4))
