@@ -15,5 +15,6 @@ if __name__ == "__main__":
     ]
     fig, axes = plt.subplots(2, 4, figsize=(12, 6))
     for ax, (name, K) in zip(axes.flat, fields): plot_K(ax, K, name)
+    axes.flat[-1].axis('off')
     plt.tight_layout()
     plt.show()

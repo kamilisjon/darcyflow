@@ -114,6 +114,62 @@ def assemble_tpfa(Nx, Ny, K):
     A = sp.coo_matrix((data, (rows, cols)), shape=(N, N)).tocsr()
     return A, rhs
 
+def assemble_fdm(Nx, Ny, K):
+    N = Nx * Ny
+    hx, hy = 1.0 / Nx, 1.0 / Ny
+    rhs = np.zeros(N)
+    rows, cols, data = [], [], []
+
+    def k_avg(k1, k2):
+        return 2.0 * k1 * k2 / (k1 + k2) if (k1 + k2) > 0 else 0.0
+
+    for j in range(Ny):
+        for i in range(Nx):
+            idx = gidx(i, j, Nx)
+            diag = 0.0
+            kij = K[i, j]
+
+            # West neighbor
+            if i > 0:
+                kw = k_avg(kij, K[i - 1, j])
+                rows.append(idx)
+                cols.append(gidx(i - 1, j, Nx))
+                data.append(-kw / hx**2)
+                diag += kw / hx**2
+
+            # East neighbor
+            if i < Nx - 1:
+                ke = k_avg(kij, K[i + 1, j])
+                rows.append(idx)
+                cols.append(gidx(i + 1, j, Nx))
+                data.append(-ke / hx**2)
+                diag += ke / hx**2
+
+            # South neighbor
+            if j > 0:
+                ks = k_avg(kij, K[i, j - 1])
+                rows.append(idx)
+                cols.append(gidx(i, j - 1, Nx))
+                data.append(-ks / hy**2)
+                diag += ks / hy**2
+
+            # North neighbor
+            if j < Ny - 1:
+                kn = k_avg(kij, K[i, j + 1])
+                rows.append(idx)
+                cols.append(gidx(i, j + 1, Nx))
+                data.append(-kn / hy**2)
+                diag += kn / hy**2
+
+            # Center
+            rows.append(idx)
+            cols.append(idx)
+            data.append(diag)
+
+    A = sp.coo_matrix((data, (rows, cols)), shape=(N, N)).tocsr()
+    return A, rhs
+
+
 # ---------- Dirichlet BC utility --------------------------------------------
 def apply_dirichlet(A, rhs, pressure_bc):
     for cell, pval in pressure_bc.items():
@@ -132,6 +188,8 @@ def solve(Nx, Ny, pressure_bc, K, method="mpfa_o"):
         A, rhs = assemble_mpfa_o(Nx, Ny, K)
     elif method == "tpfa":
         A, rhs = assemble_tpfa(Nx, Ny, K)
+    elif method == "fdm":
+        A, rhs = assemble_fdm(Nx, Ny, K)
     else:
         raise NotImplementedError(f"Method {method} is not implemented. Implemented: 'mpfa_o', 'tpfa'")
     A, rhs = apply_dirichlet(A, rhs, pressure_bc)

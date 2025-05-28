@@ -49,3 +49,25 @@ def radial_inclusion_k(Nx, Ny, *, r=10, k_in=20.0, k_out=1e-5, center=None):
     K = np.full((Ny, Nx), k_out)
     K[dist <= r] = k_in
     return K
+
+def calculate_flow(Nx, Ny, P, K):
+    ny, nx = P.shape
+    dx = Nx / (nx - 1)
+    dy = Ny / (ny - 1)
+
+    # Compute pressure gradients using central differences
+    dPdx = np.zeros_like(P)
+    dPdy = np.zeros_like(P)
+    # Interior points: central difference
+    dPdx[:, 1:-1] = (P[:, 2:] - P[:, :-2]) / (2*dx)
+    dPdy[1:-1, :] = (P[2:, :] - P[:-2, :]) / (2*dy)
+    # Boundaries: one-sided difference
+    dPdx[:, 0] = (P[:, 1] - P[:, 0]) / dx
+    dPdx[:, -1] = (P[:, -1] - P[:, -2]) / dx
+    dPdy[0, :] = (P[1, :] - P[0, :]) / dy
+    dPdy[-1, :] = (P[-1, :] - P[-2, :]) / dy
+    # Darcy velocity components: u = -K * grad P
+    u_x = -K * dPdx
+    u_y = -K * dPdy
+
+    return u_x, u_y
