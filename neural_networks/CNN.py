@@ -15,17 +15,7 @@ if os.path.exists('K_tensor.pt') and os.path.exists('P_tensor.pt'):
     P_tensor = torch.load('P_tensor.pt')
 else:
     print("Generating new tensors...")
-    K_data, P_data = generate_dataset()
-
-    # Normalize
-    K_data = (K_data - K_data.mean()) / K_data.std()
-    P_data = (P_data - P_data.mean()) / P_data.std()
-
-    K_tensor = torch.tensor(K_data, dtype=torch.float32).unsqueeze(1)
-    P_tensor = torch.tensor(P_data, dtype=torch.float32).unsqueeze(1)
-
-    torch.save(K_tensor, 'K_tensor.pt')
-    torch.save(P_tensor, 'P_tensor.pt')
+    K_tensor, P_tensor = generate_dataset()
 
 n_samples = len(K_tensor)
 num_epochs = 2000
