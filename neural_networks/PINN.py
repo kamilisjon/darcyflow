@@ -1,3 +1,13 @@
+"""
+
+Hand-crafted PINN implementation
+Currently the results are non-existing for heterogeneous permeability K (and for homogeneous)
+There is a possibility to implement PINN using DeepXDE (https://deepxde.readthedocs.io/en/latest/index.html), but still had issues
+
+CURRENTLY NOT WORKING GOOD
+
+"""
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
