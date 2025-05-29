@@ -193,7 +193,7 @@ def solve(domain, K, method="mpfa_o"):
     elif method == "fdm":
         A, rhs = assemble_fdm(domain.Nx, domain.Ny, K)
     else:
-        raise NotImplementedError(f"Method {method} is not implemented. Implemented: 'mpfa_o', 'tpfa'")
+        raise NotImplementedError(f"Method {method} is not implemented. Implemented: 'mpfa_o', 'tpfa', 'fdm'")
     A, rhs = apply_dirichlet(A, rhs, domain.pressure_bc)
     p = spla.spsolve(A, rhs)
     return p.reshape(domain.Ny, domain.Nx)
