@@ -22,10 +22,12 @@ def plot_P(ax, P, U, title="Presure field"):
     ax.set_xlabel('x')
     ax.set_ylabel('y')
 
-def plot_diferences(*, fdm, tpfa, mpfa):
+def plot_diferences(*, fdm, tpfa, mpfa, cnn, fno):
     solvers = {"FDM": fdm,
                "TPFA": tpfa,
-               "MPFA": mpfa}
+               "MPFA": mpfa,
+               "CNN": cnn,
+               "FNO": fno}
     pairs = list(itertools.combinations(solvers.items(), 2))
     n_pairs = len(pairs)
     ncols = math.ceil(np.sqrt(n_pairs))

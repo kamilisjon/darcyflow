@@ -168,3 +168,5 @@ fig.suptitle('Inputs, ground-truth output, prediction and diference', y=0.98)
 plt.tight_layout()
 plt.savefig("no.jpg")
 plt.show()
+
+torch.save(model, "fno_model_full.pth")

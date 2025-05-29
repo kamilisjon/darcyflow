@@ -136,3 +136,5 @@ for i in range(n_show):
 plt.tight_layout()
 plt.savefig('cnn.jpg')
 plt.show()
+
+torch.save(model, "cnn_model_full.pth")
