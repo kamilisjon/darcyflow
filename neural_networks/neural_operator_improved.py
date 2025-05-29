@@ -1,55 +1,50 @@
+import os
+import time
+
 import numpy as np
 import torch
-import torch.nn as nn
+from matplotlib import pyplot as plt
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from torch.utils.data import TensorDataset, DataLoader
-import matplotlib.pyplot as plt
-from tqdm import trange
 from neuralop.models import FNO
 from neuralop import Trainer
 from neuralop.training import AdamW
 from neuralop.utils import count_model_params
 from neuralop import LpLoss, H1Loss
-from solver import solve
-from porus_media import DarcyDomain
-import sys
+
+from neural_networks.utils import generate_dataset
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 torch.cuda.set_device(device)
 
-# Generate your dataset
-n_samples = 1000
-domain = DarcyDomain()
-solver_method = 'fdm'
-
+# Initiate
+num_epochs = 2000
 
 def dict_collate_fn(batch):
     x, y = zip(*batch)
     return {'x': torch.stack(x), 'y': torch.stack(y)}
 
-
-def generate_dataset(n_samples, domain, solver_method):
-    K_list, P_list = [], []
-    for _ in trange(n_samples, desc='Generating data'):
-        K = domain.exp_uniform_k()
-        P = solve(domain, K, solver_method)
-        K_list.append(K)
-        P_list.append(P)
-    return np.array(K_list), np.array(P_list)
-
-
-if K_tensor is None and P_tensor is None:
-    K_data, P_data = generate_dataset(n_samples, domain, solver_method)
+if os.path.exists('K_tensor.pt') and os.path.exists('P_tensor.pt'):
+    print("Loading existing tensors...")
+    K_tensor = torch.load('K_tensor.pt')
+    P_tensor = torch.load('P_tensor.pt')
+else:
+    print("Generating new tensors...")
+    K_data, P_data = generate_dataset()
 
     # Normalize
     K_data = (K_data - K_data.mean()) / K_data.std()
     P_data = (P_data - P_data.mean()) / P_data.std()
 
-    # Convert to tensors
     K_tensor = torch.tensor(K_data, dtype=torch.float32).unsqueeze(1)
     P_tensor = torch.tensor(P_data, dtype=torch.float32).unsqueeze(1)
 
+    torch.save(K_tensor, 'K_tensor.pt')
+    torch.save(P_tensor, 'P_tensor.pt')
+
 # Split into train/test
+n_samples = len(K_tensor)
 split = int(0.8 * n_samples)
 train_loader = DataLoader(
     TensorDataset(K_tensor[:split], P_tensor[:split]),
@@ -76,33 +71,31 @@ model = FNO(in_channels=1,
 model = model.to(device)
 n_params = count_model_params(model)
 print(f'\nOur model has {n_params} parameters.')
-sys.stdout.flush()
 
 optimizer = AdamW(model.parameters(),
-                  lr=8e-3,
-                  weight_decay=1e-4)
+                                lr=8e-3,
+                                weight_decay=1e-4)
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=30)
 l2loss = LpLoss(d=2, p=2)
 h1loss = H1Loss(d=2)
 
 train_loss = h1loss
-eval_losses = {'h1': h1loss, 'l2': l2loss}
+eval_losses={'h1': h1loss, 'l2': l2loss}
 
-# print('\n### MODEL ###\n', model)
+print('\n### MODEL ###\n', model)
 print('\n### OPTIMIZER ###\n', optimizer)
 print('\n### SCHEDULER ###\n', scheduler)
 print('\n### LOSSES ###')
 print(f'\n * Train: {train_loss}')
 print(f'\n * Test: {eval_losses}')
-sys.stdout.flush()
 
-trainer = Trainer(model=model, n_epochs=20,
+trainer = Trainer(model=model, n_epochs=num_epochs,
                   device=device,
                   wandb_log=False,
                   eval_interval=3,
                   use_distributed=False,
                   verbose=True)
-
+start=time.time()
 trainer.train(train_loader=train_loader,
               test_loaders=test_loaders,
               optimizer=optimizer,
@@ -110,8 +103,26 @@ trainer.train(train_loader=train_loader,
               regularizer=False,
               training_loss=train_loss,
               eval_losses=eval_losses)
-
+print(f"Training took {time.time()-start:.6f} s")
 test_samples = test_loaders[16].dataset  # Just your TensorDataset
+
+
+model.eval()
+all_preds = []
+all_targets = []
+
+with torch.no_grad():
+    for batch in test_loader:
+        x, y = batch['x'].to(device), batch['y'].to(device)
+        pred = model(x)
+        all_preds.append(pred.cpu())
+        all_targets.append(y.cpu())
+
+all_preds = torch.cat(all_preds, dim=0).numpy()
+all_targets = torch.cat(all_targets, dim=0).numpy()
+mse = mean_squared_error(all_targets.flatten(), all_preds.flatten())
+mae = mean_absolute_error(all_targets.flatten(), all_preds.flatten())
+print(f"[Neural Operator] Test MSE: {mse:.6f}, MAE: {mae:.6f}")
 
 fig = plt.figure(figsize=(7, 7))
 for index in range(3):
@@ -123,27 +134,37 @@ for index in range(3):
     with torch.no_grad():
         out = model(x.unsqueeze(0))
 
-    ax = fig.add_subplot(3, 3, index * 3 + 1)
-    ax.imshow(x[0].cpu(), cmap='gray')  # permeability field K
+    ax = fig.add_subplot(3, 4, index*4 + 1)
+    ax.imshow(x[0].cpu(), cmap='viridis')  # permeability field K
     if index == 0:
         ax.set_title('Input x (Permeability)')
     plt.xticks([], [])
     plt.yticks([], [])
 
-    ax = fig.add_subplot(3, 3, index * 3 + 2)
-    ax.imshow(y[0].cpu())  # ground truth pressure
+    ax = fig.add_subplot(3, 4, index*4 + 2)
+    ax.imshow(y[0].cpu(), cmap='jet')  # ground truth pressure
     if index == 0:
         ax.set_title('Ground-truth y (Pressure)')
     plt.xticks([], [])
     plt.yticks([], [])
 
-    ax = fig.add_subplot(3, 3, index * 3 + 3)
-    ax.imshow(out.squeeze(0).squeeze(0).cpu())
+    ax = fig.add_subplot(3, 4, index*4 + 3)
+    ax.imshow(out.squeeze(0).squeeze(0).cpu(), cmap='jet')
     if index == 0:
         ax.set_title('Model prediction')
     plt.xticks([], [])
     plt.yticks([], [])
 
-fig.suptitle('Inputs, ground-truth output, and prediction', y=0.98)
+    ax = fig.add_subplot(3, 4, index*4 + 4)
+    im = ax.imshow(np.abs(y[0].cpu()-out.squeeze(0).squeeze(0).cpu()), cmap='coolwarm')
+    if index == 0:
+        ax.set_title('Diference')
+    plt.xticks([], [])
+    plt.yticks([], [])
+    cbar = fig.colorbar(im, ax=ax, shrink=0.4)
+    cbar.set_label('Absolute Error')
+
+fig.suptitle('Inputs, ground-truth output, prediction and diference', y=0.98)
 plt.tight_layout()
+plt.savefig("no.jpg")
 plt.show()
