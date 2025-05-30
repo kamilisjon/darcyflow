@@ -3,6 +3,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from neural_networks.CNN import DarcyCNN
 
 from darcyflow.porus_media import DarcyDomain, calculate_flow
 from darcyflow.solver import solve, gidx
