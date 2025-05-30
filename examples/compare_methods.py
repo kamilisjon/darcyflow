@@ -39,6 +39,9 @@ if __name__ == "__main__":
     calculate_accuracy(P_fdm, P_tpfa, "TPFA")
     calculate_accuracy(P_fdm, P_mpfa, "MPFA")
 
+    cnn = torch.load('cnn_model_full.pth', map_location=torch.device('cpu'), weights_only=False)
+    fno = torch.load('fno_model_full.pth', map_location=torch.device('cpu'), weights_only=False)
+
     stats = torch.load('norm_stats.pt')
     K_mean, K_std = stats['K_mean'], stats['K_std']
     P_mean, P_std = stats['P_mean'], stats['P_std']
