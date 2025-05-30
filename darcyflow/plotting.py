@@ -11,7 +11,7 @@ def plot_K(ax, K, title="Permeability field"):
     ax.set_xlabel('x')
     ax.set_ylabel('y')
 
-def plot_P(ax, P, U, title="Presure field"):
+def plot_P(ax, P, U, title="Pressure field"):
     ny, nx = P.shape
     x = np.linspace(0, nx-1, nx)
     y = np.linspace(0, ny-1, ny)
