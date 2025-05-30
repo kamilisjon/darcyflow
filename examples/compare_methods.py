@@ -1,9 +1,16 @@
 import time
+
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
+
 from darcyflow.porus_media import DarcyDomain, calculate_flow
 from darcyflow.solver import solve, gidx
 from darcyflow.plotting import plot_K, plot_P, plot_diferences
-import torch
+
+def calculate_accuracy(P_fdm, P_target, name_target):
+    mae, mse = np.mean(np.abs(P_target - P_fdm)), np.mean((P_target - P_fdm)**2)
+    print(f"{name_target}  –  MAE: {mae:.4e},  MSE: {mse:.4e}")
 
 if __name__ == "__main__":
     # TODO: Current implementation does not play well with rectangles. Porus media and pressure field rectangles have different aspect ratios.
@@ -29,8 +36,8 @@ if __name__ == "__main__":
        P_mpfa = solve(domain, K, method="mpfa_o")
     print(f"MPFA solution time: {int((time.time()-start)*1000/iterations)}ms")
 
-    cnn = torch.load('cnn_model_full.pth', map_location=torch.device('cpu'), weights_only=False)
-    fno = torch.load('fno_model_full.pth', map_location=torch.device('cpu'), weights_only=False)
+    calculate_accuracy(P_fdm, P_tpfa, "TPFA")
+    calculate_accuracy(P_fdm, P_mpfa, "MPFA")
 
     stats = torch.load('norm_stats.pt')
     K_mean, K_std = stats['K_mean'], stats['K_std']
