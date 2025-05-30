@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.ndimage import gaussian_filter, uniform_filter
+from scipy.ndimage import uniform_filter
 
 from darcyflow.solver import gidx
 
@@ -36,12 +36,6 @@ class DarcyDomain:
             for j in range(self.Nx):
                 K[i, j] = k_high if ((i // block + j // block) & 1) == 0 else k_low
         return K
-
-    def gaussian_random_k(self, *, mean_logK=-5, sigma=1.0, corr_len=4):
-        rng = np.random.default_rng()
-        field = rng.normal(mean_logK, sigma, size=(self.Ny, self.Nx))
-        field = gaussian_filter(field, corr_len)
-        return 10.0 ** field
 
     def exp_uniform_k(self, *, scale=5.0, size=3, mode='reflect'):
         U = np.random.rand(self.Nx, self.Ny)
