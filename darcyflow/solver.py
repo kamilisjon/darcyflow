@@ -1,3 +1,5 @@
+import statistics
+
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
@@ -16,12 +18,6 @@ def four_cells_around_node(i, j, Nx, Ny):
     if i > 0 and j < Ny:      c.append(gidx(i - 1, j,     Nx))   # NW
     return c
 
-# ---------- local O-method transmissibilities (heterogeneous) ---------------
-def harm(k1, k2):
-    """Flux-consistent harmonic mean."""
-    return 0.0 if k1 + k2 == 0.0 else 2.0 * k1 * k2 / (k1 + k2)
-
-
 def local_T(Kloc, hx, hy):
     """
     Six transmissibilities for one interaction region with *heterogeneous*
@@ -30,10 +26,10 @@ def local_T(Kloc, hx, hy):
     Th = hy / hx          # geometric prefactors (face area / distance)
     Tv = hx / hy
 
-    kx  = Th * harm(Kloc[0], Kloc[1])   # SW–SE
-    ky  = Tv * harm(Kloc[1], Kloc[2])   # SE–NE
-    kx2 = Th * harm(Kloc[2], Kloc[3])   # NE–NW
-    ky2 = Tv * harm(Kloc[3], Kloc[0])   # NW–SW
+    kx  = Th * statistics.harmonic_mean([Kloc[0], Kloc[1]])   # SW–SE
+    ky  = Tv * statistics.harmonic_mean([Kloc[1], Kloc[2]])   # SE–NE
+    kx2 = Th * statistics.harmonic_mean([Kloc[2], Kloc[3]])   # NE–NW
+    ky2 = Tv * statistics.harmonic_mean([Kloc[3], Kloc[0]])   # NW–SW
 
     # Cross-face transmissibilities: same closed-form as uniform case but
     # now built from the four neighbouring face coefficients
@@ -122,9 +118,6 @@ def assemble_fdm(Nx, Ny, K):
     rhs = np.zeros(N)
     rows, cols, data = [], [], []
 
-    def k_avg(k1, k2):
-        return 2.0 * k1 * k2 / (k1 + k2) if (k1 + k2) > 0 else 0.0
-
     for j in range(Ny):
         for i in range(Nx):
             idx = gidx(i, j, Nx)
@@ -133,7 +126,7 @@ def assemble_fdm(Nx, Ny, K):
 
             # West neighbor
             if i > 0:
-                kw = k_avg(kij, K[i - 1, j])
+                kw = statistics.harmonic_mean([kij, K[i - 1, j]])
                 rows.append(idx)
                 cols.append(gidx(i - 1, j, Nx))
                 data.append(-kw / hx**2)
@@ -141,7 +134,7 @@ def assemble_fdm(Nx, Ny, K):
 
             # East neighbor
             if i < Nx - 1:
-                ke = k_avg(kij, K[i + 1, j])
+                ke = statistics.harmonic_mean([kij, K[i + 1, j]])
                 rows.append(idx)
                 cols.append(gidx(i + 1, j, Nx))
                 data.append(-ke / hx**2)
@@ -149,7 +142,7 @@ def assemble_fdm(Nx, Ny, K):
 
             # South neighbor
             if j > 0:
-                ks = k_avg(kij, K[i, j - 1])
+                ks = statistics.harmonic_mean([kij, K[i, j - 1]])
                 rows.append(idx)
                 cols.append(gidx(i, j - 1, Nx))
                 data.append(-ks / hy**2)
@@ -157,7 +150,7 @@ def assemble_fdm(Nx, Ny, K):
 
             # North neighbor
             if j < Ny - 1:
-                kn = k_avg(kij, K[i, j + 1])
+                kn = statistics.harmonic_mean([kij, K[i, j + 1]])
                 rows.append(idx)
                 cols.append(gidx(i, j + 1, Nx))
                 data.append(-kn / hy**2)
