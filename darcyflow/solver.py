@@ -2,11 +2,11 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 import warnings
+
+from darcyflow.helpers import gidx
 warnings.simplefilter("ignore", sp.SparseEfficiencyWarning)
 
 # ---------- helpers ----------------------------------------------------------
-def gidx(i, j, Nx):                  # (i,j) → global cell index
-    return i + j * Nx
 
 def four_cells_around_node(i, j, Nx, Ny):
     c = []
