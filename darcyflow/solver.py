@@ -12,9 +12,11 @@ warnings.simplefilter("ignore", sp.SparseEfficiencyWarning)
 class FiniteMethodsSolver:
     def __init__(self, Nx: int, Ny: int, pressure_bc: dict[int, float]):
         self.Nx, self.Ny, self.hx, self.hy, self.N, self.pressure_bc  = Nx, Ny, 1.0/Nx, 1.0/Ny, Nx*Ny, pressure_bc
-        self.__methods: dict[str, callable] = {"fdm": partial(self.__5_point, hor_func=lambda h: h / self.hx**2, vert_func=lambda h: h / self.hy**2),
-                                               "tpfa": self.__tpfa,
-                                               "mpfa_o": self.__mpfa_o}
+        self.__methods: dict[str, callable] = {
+            "fdm": partial(self.__5_point, hor_func=lambda h: h / self.hx**2, vert_func=lambda h: h / self.hy**2),
+            "tpfa": partial(self.__5_point, hor_func=lambda h: (self.hy / self.hx) * h, vert_func=lambda h:(self.hx / self.hy) * h),
+            "mpfa_o": self.__mpfa_o
+        }
 
     @staticmethod
     def __four_cells_around_node(i, j, Nx, Ny):
@@ -68,46 +70,6 @@ class FiniteMethodsSolver:
                     cols += [b, a, a, b]
                     data += [-t, -t,  t,  t]
 
-        return sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
-
-    def __tpfa(self, K):
-        rows, cols, data = [], [], []
-        for j in range(self.Ny):
-            for i in range(self.Nx):
-                diag = 0.0
-                target_cell_gidx = gidx(i,j,self.Nx)
-                target_cell_perm = K[i, j]
-                if i>0:
-                    h_mean = harmonic_mean_2point(target_cell_perm, K[i-1, j])
-                    t = (self.hy / self.hx) * h_mean
-                    diag+=t
-                    rows.append(target_cell_gidx)
-                    cols.append(gidx(i - 1, j, self.Nx))
-                    data.append(-t)
-                if i<self.Nx-1:
-                    h_mean = harmonic_mean_2point(target_cell_perm, K[i+1, j])
-                    t = (self.hy / self.hx) * h_mean
-                    diag+=t
-                    rows.append(target_cell_gidx)
-                    cols.append(gidx(i + 1, j, self.Nx))
-                    data.append(-t)
-                if j>0:
-                    h_mean = harmonic_mean_2point(target_cell_perm, K[i, j-1])
-                    t = (self.hx / self.hy) * h_mean
-                    diag+=t
-                    rows.append(target_cell_gidx)
-                    cols.append(gidx(i,j-1,self.Nx))
-                    data.append(-t)
-                if j<self.Ny-1:
-                    h_mean = harmonic_mean_2point(target_cell_perm, K[i, j+1])
-                    t = (self.hx / self.hy) * h_mean
-                    diag+=t
-                    rows.append(target_cell_gidx)
-                    cols.append(gidx(i,j+1,self.Nx))
-                    data.append(-t)
-                rows.append(target_cell_gidx)
-                cols.append(target_cell_gidx)
-                data.append(diag)
         return sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
 
     def __5_point(self, K, hor_func:callable, vert_func:callable):
