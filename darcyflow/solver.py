@@ -79,14 +79,14 @@ class FiniteMethodsSolver:
                     t = (self.hy / self.hx) * h_mean
                     diag+=t
                     rows.append(target_cell_gidx)
-                    cols.append(target_cell_gidx-1)
+                    cols.append(gidx(i - 1, j, self.Nx))
                     data.append(-t)
                 if i<self.Nx-1:
                     h_mean = harmonic_mean_2point(target_cell_perm, K[i+1, j])
                     t = (self.hy / self.hx) * h_mean
                     diag+=t
                     rows.append(target_cell_gidx)
-                    cols.append(target_cell_gidx+1)
+                    cols.append(gidx(i + 1, j, self.Nx))
                     data.append(-t)
                 if j>0:
                     h_mean = harmonic_mean_2point(target_cell_perm, K[i, j-1])
