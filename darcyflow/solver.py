@@ -10,7 +10,7 @@ warnings.simplefilter("ignore", sp.SparseEfficiencyWarning)
 # ---------- helpers ----------------------------------------------------------
 
 class FiniteMethodsSolver:
-    def __init__(self, Nx: int, Ny: int, pressure_bc: dict[int, float]):
+    def __init__(self, Nx:int, Ny:int, pressure_bc:dict[int, float]):
         self.Nx, self.Ny, self.hx, self.hy, self.N, self.pressure_bc  = Nx, Ny, 1.0/Nx, 1.0/Ny, Nx*Ny, pressure_bc
         self.__methods: dict[str, callable] = {
             "fdm": partial(self.__5_point, hor_func=lambda h: h / self.hx**2, vert_func=lambda h: h / self.hy**2),
@@ -48,7 +48,7 @@ class FiniteMethodsSolver:
         return (kx, ky, kx2, ky2, kdiag1, kdiag2)
 
 
-    def __mpfa_o(self, K):
+    def __mpfa_o(self, K:np.ndarray) -> sp.csr_matrix:
         rows, cols, data = [], [], []
         for j in range(self.Ny + 1):
             for i in range(self.Nx + 1):
@@ -72,7 +72,7 @@ class FiniteMethodsSolver:
 
         return sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
 
-    def __5_point(self, K:np.ndarray, hor_func:callable, vert_func:callable) -> sp.csr_array:
+    def __5_point(self, K:np.ndarray, hor_func:callable, vert_func:callable) -> sp.csr_matrix:
         rows, cols, data = [], [], []
         for j in range(self.Ny):
             for i in range(self.Nx):
@@ -121,10 +121,8 @@ class FiniteMethodsSolver:
             rhs[cell] = pval
         return A, rhs
 
-    def solve(self, K, method="fdm"):
+    def solve(self, K:np.ndarray, method:str="fdm") -> np.ndarray:
         if method not in list(self.__methods.keys()):
             raise NotImplementedError(f"Method {method} is not implemented. Implemented methods: {list(self.__methods.keys())}")
-        A = self.__methods[method](K)
-        A, rhs = self.__apply_dirichlet_bc(A)
-        P = spla.spsolve(A, rhs)
-        return P.reshape(self.Ny, self.Nx)
+        A, rhs = self.__apply_dirichlet_bc(self.__methods[method](K))
+        return spla.spsolve(A, rhs).reshape(self.Ny, self.Nx)
