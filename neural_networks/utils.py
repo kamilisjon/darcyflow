@@ -1,14 +1,18 @@
 import numpy as np
 import torch
 from tqdm import trange
-from darcyflow.solver import solve
+from darcyflow.helpers import gidx
+from darcyflow.solver import FiniteMethodsSolver
 from darcyflow.porus_media import DarcyDomain
 
-def generate_dataset(n_samples = 10000, domain = DarcyDomain(), solver_method = 'fdm'):
+def generate_dataset(n_samples = 10000, domain = DarcyDomain(Nx=40, Ny=40), solver_method = 'fdm'):
     K_list, P_list = [], []
+    solver = FiniteMethodsSolver(Nx=domain.Nx, Ny=domain.Nx, 
+                                 pressure_bc={gidx(0, 0, domain.Nx): 300.0,
+                                              gidx(domain.Nx - 1, domain.Ny - 1, domain.Nx): -300.0})
     for _ in trange(n_samples, desc='Generating data'):
         K = domain.exp_uniform_k()
-        P = solve(domain, K, solver_method)
+        P = solver(K, solver_method)
         K_list.append(K)
         P_list.append(P)
     # Normalize data
