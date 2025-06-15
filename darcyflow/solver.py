@@ -1,11 +1,9 @@
-import statistics
-
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 import warnings
 
-from darcyflow.helpers import gidx
+from darcyflow.helpers import gidx, harmonic_mean_2point
 warnings.simplefilter("ignore", sp.SparseEfficiencyWarning)
 
 # ---------- helpers ----------------------------------------------------------
@@ -33,10 +31,10 @@ class FiniteMethodsSolver:
         Th = hy / hx          # geometric prefactors (face area / distance)
         Tv = hx / hy
 
-        kx  = Th * statistics.harmonic_mean([Kloc[0], Kloc[1]])   # SW–SE
-        ky  = Tv * statistics.harmonic_mean([Kloc[1], Kloc[2]])   # SE–NE
-        kx2 = Th * statistics.harmonic_mean([Kloc[2], Kloc[3]])   # NE–NW
-        ky2 = Tv * statistics.harmonic_mean([Kloc[3], Kloc[0]])   # NW–SW
+        kx  = Th * harmonic_mean_2point(Kloc[0], Kloc[1])   # SW–SE
+        ky  = Tv * harmonic_mean_2point(Kloc[1], Kloc[2])   # SE–NE
+        kx2 = Th * harmonic_mean_2point(Kloc[2], Kloc[3])   # NE–NW
+        ky2 = Tv * harmonic_mean_2point(Kloc[3], Kloc[0])   # NW–SW
 
         # Cross-face transmissibilities: same closed-form as uniform case but
         # now built from the four neighbouring face coefficients
@@ -121,7 +119,7 @@ class FiniteMethodsSolver:
 
                 # West neighbor
                 if i > 0:
-                    kw = statistics.harmonic_mean([kij, K[i - 1, j]])
+                    kw = harmonic_mean_2point(kij, K[i - 1, j])
                     rows.append(idx)
                     cols.append(gidx(i - 1, j, self.Nx))
                     data.append(-kw / self.hx**2)
@@ -129,7 +127,7 @@ class FiniteMethodsSolver:
 
                 # East neighbor
                 if i < self.Nx - 1:
-                    ke = statistics.harmonic_mean([kij, K[i + 1, j]])
+                    ke = harmonic_mean_2point(kij, K[i + 1, j])
                     rows.append(idx)
                     cols.append(gidx(i + 1, j, self.Nx))
                     data.append(-ke / self.hx**2)
@@ -137,7 +135,7 @@ class FiniteMethodsSolver:
 
                 # South neighbor
                 if j > 0:
-                    ks = statistics.harmonic_mean([kij, K[i, j - 1]])
+                    ks = harmonic_mean_2point(kij, K[i, j - 1])
                     rows.append(idx)
                     cols.append(gidx(i, j - 1, self.Nx))
                     data.append(-ks / self.hy**2)
@@ -145,7 +143,7 @@ class FiniteMethodsSolver:
 
                 # North neighbor
                 if j < self.Ny - 1:
-                    kn = statistics.harmonic_mean([kij, K[i, j + 1]])
+                    kn = harmonic_mean_2point(kij, K[i, j + 1])
                     rows.append(idx)
                     cols.append(gidx(i, j + 1, self.Nx))
                     data.append(-kn / self.hy**2)
