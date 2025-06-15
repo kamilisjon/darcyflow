@@ -64,9 +64,8 @@ class FiniteMethodsSolver:
                     rows += [a, b, a, b]
                     cols += [b, a, a, b]
                     data += [-t, -t,  t,  t]
-
-        A = sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
-        return A
+                    
+        return sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
 
     def __tpfa(self, K):
         TX = np.zeros((self.Nx+1, self.Ny))
@@ -113,8 +112,7 @@ class FiniteMethodsSolver:
                 rows.append(target_cell_gidx)
                 cols.append(target_cell_gidx)
                 data.append(diag)
-        A = sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
-        return A
+        return sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
 
     def __fdm(self, K):
         rows, cols, data = [], [], []
@@ -158,10 +156,8 @@ class FiniteMethodsSolver:
 
                 rows.append(target_cell_gidx)
                 cols.append(target_cell_gidx)
-                data.append(diag)
-
-        A = sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
-        return A
+                data.append(diag)   
+        return sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
 
     def __apply_dirichlet_bc(self, A):
         rhs = np.zeros(self.N)
