@@ -4,3 +4,4 @@ scipy==1.15.3
 scikit-learn==1.6.1
 neuraloperator==1.0.2
 torch==2.5.0
+tqdm
