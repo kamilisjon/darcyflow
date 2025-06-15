@@ -72,31 +72,36 @@ class FiniteMethodsSolver:
 
         return sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
 
-    def __5_point(self, K, hor_func:callable, vert_func:callable):
+    def __5_point(self, K:np.ndarray, hor_func:callable, vert_func:callable) -> sp.csr_array:
         rows, cols, data = [], [], []
         for j in range(self.Ny):
             for i in range(self.Nx):
                 diag = 0.0
                 target_cell_gidx = gidx(i, j, self.Nx)
                 target_cell_perm = K[i, j]
+                # Cell to the left
+                # If i is equal to 0, then this an edge and now cell to the left exists. Same logic for the following conditions.
                 if i > 0:
                     t = hor_func(harmonic_mean_2point(target_cell_perm, K[i - 1, j]))
                     diag += t
                     rows.append(target_cell_gidx)
                     cols.append(gidx(i - 1, j, self.Nx))
                     data.append(-t)
+                # Cell to the right
                 if i < self.Nx - 1:
                     t = hor_func(harmonic_mean_2point(target_cell_perm, K[i + 1, j]))
                     diag += t
                     rows.append(target_cell_gidx)
                     cols.append(gidx(i + 1, j, self.Nx))
                     data.append(-t)
+                # Cell below
                 if j > 0:
                     t = vert_func(harmonic_mean_2point(target_cell_perm, K[i, j - 1]))
                     diag += t
                     rows.append(target_cell_gidx)
                     cols.append(gidx(i, j - 1, self.Nx))
                     data.append(-t)
+                # Cell above
                 if j < self.Ny - 1:
                     t = vert_func(harmonic_mean_2point(target_cell_perm, K[i, j + 1]))
                     diag += t
