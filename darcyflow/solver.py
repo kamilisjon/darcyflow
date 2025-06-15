@@ -64,51 +64,44 @@ class FiniteMethodsSolver:
                     rows += [a, b, a, b]
                     cols += [b, a, a, b]
                     data += [-t, -t,  t,  t]
-                    
+
         return sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
 
     def __tpfa(self, K):
-        TX = np.zeros((self.Nx+1, self.Ny))
-        TY = np.zeros((self.Nx, self.Ny+1))
-        perm_inv = 1.0 / K
-        TX[1:-1, :] = (2 * self.hy / self.hx) / (perm_inv[:-1, :] + perm_inv[1:, :])
-        TY[:, 1:-1] = (2 * self.hx / self.hy) / (perm_inv[:, :-1] + perm_inv[:, 1:])
         rows, cols, data = [], [], []
         for j in range(self.Ny):
             for i in range(self.Nx):
                 diag = 0.0
                 target_cell_gidx = gidx(i,j,self.Nx)
-
+                target_cell_perm = K[i, j]
                 if i>0:
-                    rows.append(target_cell_gidx)
-                    cols.append(target_cell_gidx-1)
-
-                    t = TX[i,j]
-                    data.append(-t)
+                    h_mean = harmonic_mean_2point(target_cell_perm, K[i-1, j])
+                    t = (self.hy / self.hx) * h_mean
                     diag+=t
-
+                    rows.append(target_cell_gidx)
+                    cols.append(gidx(i - 1, j, self.Nx))
+                    data.append(-t)
                 if i<self.Nx-1:
-                    rows.append(target_cell_gidx)
-                    cols.append(target_cell_gidx+1)
-
-                    t = TX[i+1,j]
-                    data.append(-t)
+                    h_mean = harmonic_mean_2point(target_cell_perm, K[i+1, j])
+                    t = (self.hy / self.hx) * h_mean
                     diag+=t
-
+                    rows.append(target_cell_gidx)
+                    cols.append(gidx(i + 1, j, self.Nx))
+                    data.append(-t)
                 if j>0:
+                    h_mean = harmonic_mean_2point(target_cell_perm, K[i, j-1])
+                    t = (self.hx / self.hy) * h_mean
+                    diag+=t
                     rows.append(target_cell_gidx)
                     cols.append(gidx(i,j-1,self.Nx))
-
-                    t = TY[i,j]
                     data.append(-t)
-                    diag+=t
                 if j<self.Ny-1:
+                    h_mean = harmonic_mean_2point(target_cell_perm, K[i, j+1])
+                    t = (self.hx / self.hy) * h_mean
+                    diag+=t
                     rows.append(target_cell_gidx)
                     cols.append(gidx(i,j+1,self.Nx))
-
-                    t = TY[i,j+1]
                     data.append(-t)
-                    diag+=t
                 rows.append(target_cell_gidx)
                 cols.append(target_cell_gidx)
                 data.append(diag)
@@ -121,39 +114,34 @@ class FiniteMethodsSolver:
                 diag = 0.0
                 target_cell_gidx = gidx(i, j, self.Nx)
                 target_cell_perm = K[i, j]
-
                 if i > 0:
+                    h_mean = harmonic_mean_2point(target_cell_perm, K[i - 1, j])
+                    t = h_mean / self.hx**2
+                    diag += t
                     rows.append(target_cell_gidx)
                     cols.append(gidx(i - 1, j, self.Nx))
-
-                    m = harmonic_mean_2point(target_cell_perm, K[i - 1, j])
-                    data.append(-m / self.hx**2)
-                    diag += m / self.hx**2
-
+                    data.append(-t)
                 if i < self.Nx - 1:
+                    h_mean = harmonic_mean_2point(target_cell_perm, K[i + 1, j])
+                    t = h_mean / self.hx**2
+                    diag += t
                     rows.append(target_cell_gidx)
                     cols.append(gidx(i + 1, j, self.Nx))
-                    
-                    m = harmonic_mean_2point(target_cell_perm, K[i + 1, j])
-                    data.append(-m / self.hx**2)
-                    diag += m / self.hx**2
-
+                    data.append(-t)
                 if j > 0:
+                    h_mean = harmonic_mean_2point(target_cell_perm, K[i, j - 1])
+                    t = h_mean / self.hy**2
+                    diag += t
                     rows.append(target_cell_gidx)
                     cols.append(gidx(i, j - 1, self.Nx))
-
-                    m = harmonic_mean_2point(target_cell_perm, K[i, j - 1])
-                    data.append(-m / self.hy**2)
-                    diag += m / self.hy**2
-
+                    data.append(-t)
                 if j < self.Ny - 1:
+                    h_mean = harmonic_mean_2point(target_cell_perm, K[i, j + 1])
+                    t = h_mean / self.hy**2
+                    diag += t
                     rows.append(target_cell_gidx)
                     cols.append(gidx(i, j + 1, self.Nx))
-                    
-                    m = harmonic_mean_2point(target_cell_perm, K[i, j + 1])
-                    data.append(-m / self.hy**2)
-                    diag += m / self.hy**2
-
+                    data.append(-t)
                 rows.append(target_cell_gidx)
                 cols.append(target_cell_gidx)
                 data.append(diag)   
