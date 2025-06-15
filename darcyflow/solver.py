@@ -72,7 +72,7 @@ class FiniteMethodsSolver:
 
         return sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
 
-    def __5_point(self, K, hor_func:callable, vert_func:callable):
+    def __5_point(self, K:np.ndarray, hor_func:callable, vert_func:callable) -> sp.csr_array:
         rows, cols, data = [], [], []
         for j in range(self.Ny):
             for i in range(self.Nx):
