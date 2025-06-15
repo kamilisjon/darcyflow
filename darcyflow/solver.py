@@ -77,34 +77,41 @@ class FiniteMethodsSolver:
         rows, cols, data = [], [], []
         for j in range(self.Ny):
             for i in range(self.Nx):
-                m = gidx(i,j,self.Nx)
                 diag = 0.0
+                target_cell_gidx = gidx(i,j,self.Nx)
+
                 if i>0:
-                    rows.append(m)
-                    cols.append(m-1)
+                    rows.append(target_cell_gidx)
+                    cols.append(target_cell_gidx-1)
+
                     t = TX[i,j]
                     data.append(-t)
                     diag+=t
+
                 if i<self.Nx-1:
-                    rows.append(m)
-                    cols.append(m+1)
+                    rows.append(target_cell_gidx)
+                    cols.append(target_cell_gidx+1)
+
                     t = TX[i+1,j]
                     data.append(-t)
                     diag+=t
+
                 if j>0:
-                    rows.append(m)
+                    rows.append(target_cell_gidx)
                     cols.append(gidx(i,j-1,self.Nx))
+
                     t = TY[i,j]
                     data.append(-t)
                     diag+=t
                 if j<self.Ny-1:
-                    rows.append(m)
+                    rows.append(target_cell_gidx)
                     cols.append(gidx(i,j+1,self.Nx))
+
                     t = TY[i,j+1]
                     data.append(-t)
                     diag+=t
-                rows.append(m)
-                cols.append(m)
+                rows.append(target_cell_gidx)
+                cols.append(target_cell_gidx)
                 data.append(diag)
         A = sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
         return A
@@ -113,45 +120,44 @@ class FiniteMethodsSolver:
         rows, cols, data = [], [], []
         for j in range(self.Ny):
             for i in range(self.Nx):
-                idx = gidx(i, j, self.Nx)
                 diag = 0.0
-                kij = K[i, j]
+                target_cell_gidx = gidx(i, j, self.Nx)
+                target_cell_perm = K[i, j]
 
-                # West neighbor
                 if i > 0:
-                    kw = harmonic_mean_2point(kij, K[i - 1, j])
-                    rows.append(idx)
+                    rows.append(target_cell_gidx)
                     cols.append(gidx(i - 1, j, self.Nx))
-                    data.append(-kw / self.hx**2)
-                    diag += kw / self.hx**2
 
-                # East neighbor
+                    m = harmonic_mean_2point(target_cell_perm, K[i - 1, j])
+                    data.append(-m / self.hx**2)
+                    diag += m / self.hx**2
+
                 if i < self.Nx - 1:
-                    ke = harmonic_mean_2point(kij, K[i + 1, j])
-                    rows.append(idx)
+                    rows.append(target_cell_gidx)
                     cols.append(gidx(i + 1, j, self.Nx))
-                    data.append(-ke / self.hx**2)
-                    diag += ke / self.hx**2
+                    
+                    m = harmonic_mean_2point(target_cell_perm, K[i + 1, j])
+                    data.append(-m / self.hx**2)
+                    diag += m / self.hx**2
 
-                # South neighbor
                 if j > 0:
-                    ks = harmonic_mean_2point(kij, K[i, j - 1])
-                    rows.append(idx)
+                    rows.append(target_cell_gidx)
                     cols.append(gidx(i, j - 1, self.Nx))
-                    data.append(-ks / self.hy**2)
-                    diag += ks / self.hy**2
 
-                # North neighbor
+                    m = harmonic_mean_2point(target_cell_perm, K[i, j - 1])
+                    data.append(-m / self.hy**2)
+                    diag += m / self.hy**2
+
                 if j < self.Ny - 1:
-                    kn = harmonic_mean_2point(kij, K[i, j + 1])
-                    rows.append(idx)
+                    rows.append(target_cell_gidx)
                     cols.append(gidx(i, j + 1, self.Nx))
-                    data.append(-kn / self.hy**2)
-                    diag += kn / self.hy**2
+                    
+                    m = harmonic_mean_2point(target_cell_perm, K[i, j + 1])
+                    data.append(-m / self.hy**2)
+                    diag += m / self.hy**2
 
-                # Center
-                rows.append(idx)
-                cols.append(idx)
+                rows.append(target_cell_gidx)
+                cols.append(target_cell_gidx)
                 data.append(diag)
 
         A = sp.coo_matrix((data, (rows, cols)), shape=(self.N, self.N)).tocsr()
