@@ -6,7 +6,8 @@ import torch
 from neural_networks.CNN import DarcyCNN
 
 from darcyflow.porus_media import DarcyDomain, calculate_flow
-from darcyflow.solver import solve, gidx
+from darcyflow.solver import FiniteMethodsSolver
+from darcyflow.helpers import gidx
 from darcyflow.plotting import plot_K, plot_P, plot_diferences
 
 def calculate_accuracy(P_fdm, P_target, name_target):
@@ -18,23 +19,24 @@ if __name__ == "__main__":
     Nx=Ny=40
     iterations = 100  # for speed benchamarks
     iterations = max(iterations, 1)
-    domain = DarcyDomain(Nx=Nx, Ny=Ny, pressure_bc={gidx(0, 0, Nx): 300.0,
-                                                    gidx(Nx - 1, Ny - 1, Nx): -300.0})
+    domain = DarcyDomain(Nx=Nx, Ny=Ny)
+    solver = FiniteMethodsSolver(Nx=Nx, Ny=Ny, pressure_bc={gidx(0, 0, Nx): 300.0,
+                                                            gidx(Nx - 1, Ny - 1, Nx): -300.0})
     K = domain.exp_uniform_k()
     print("Running and timing solution. 100 itterations per method.")
     start = time.time()
     for _ in range(iterations):
-        P_fdm = solve(domain, K, method="fdm")
+        P_fdm = solver.solve(K, method="fdm")
     print(f"FDM solution time: {int((time.time()-start)*1000/iterations)}ms")
 
     start = time.time()
     for _ in range(iterations):
-        P_tpfa = solve(domain, K, method="tpfa")
+        P_tpfa = solver.solve(K, method="tpfa")
     print(f"TPFA solution time: {int((time.time()-start)*1000/iterations)}ms")
 
     start = time.time()
     for _ in range(iterations):
-       P_mpfa = solve(domain, K, method="mpfa_o")
+       P_mpfa = solver.solve(K, method="mpfa_o")
     print(f"MPFA solution time: {int((time.time()-start)*1000/iterations)}ms")
 
     cnn = torch.load('cnn_model_full.pth', map_location=torch.device('cpu'), weights_only=False)

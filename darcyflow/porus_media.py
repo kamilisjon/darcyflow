@@ -1,16 +1,11 @@
 import numpy as np
 from scipy.ndimage import uniform_filter
 
-from darcyflow.solver import gidx
-
 np.random.seed(0)
 
 class DarcyDomain:
-    def __init__(self, **kwargs):
-        self.Nx = kwargs.get('Nx', 40)
-        self.Ny = kwargs.get('Ny', 40)
-        self.pressure_bc = kwargs.get('pressure_bc', {gidx(0, 0, self.Nx): 300.0,
-                                                      gidx(self.Nx - 1, self.Ny - 1, self.Nx): -300.0})
+    def __init__(self, Nx, Ny):
+        self.Nx, self.Ny = Nx, Ny
     
     def homogenous_k(self):
         return np.ones((self.Ny, self.Nx))
